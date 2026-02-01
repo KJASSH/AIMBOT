@@ -1,0 +1,249 @@
+-- LOS GOIANOS HUB - PAINEL COMPLETO FINAL
+
+-- SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LP = Players.LocalPlayer
+
+-- SETTINGS
+local Settings = {
+    Aimbot = false,
+    AimPart = "Head",
+    FOV = 150,
+    Smooth = 0.18,
+    ESP = false,
+    Speed = false,
+    WalkSpeed = 18
+}
+
+-- GUI
+local Gui = Instance.new("ScreenGui", game.CoreGui)
+Gui.Name = "LosGoianosHub"
+
+local Main = Instance.new("Frame", Gui)
+Main.Size = UDim2.fromOffset(320, 380)
+Main.Position = UDim2.fromScale(0.05, 0.25)
+Main.BackgroundColor3 = Color3.fromRGB(18,18,18)
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,12)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1,-40,0,40)
+Title.BackgroundTransparency = 1
+Title.Text = "🔥 LOS GOIANOS HUB 🔥"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(255,60,60)
+
+-- MINIMIZAR
+local MinBtn = Instance.new("TextButton", Main)
+MinBtn.Size = UDim2.fromOffset(30,30)
+MinBtn.Position = UDim2.new(1,-35,0,5)
+MinBtn.Text = "-"
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 20
+MinBtn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+MinBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(1,0)
+
+local minimized = false
+local savedSize = Main.Size
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        savedSize = Main.Size
+        Main.Size = UDim2.fromOffset(320,45)
+        MinBtn.Text = "+"
+        for _,v in pairs(Main:GetChildren()) do
+            if v:IsA("GuiObject") and v ~= Title and v ~= MinBtn then
+                v.Visible = false
+            end
+        end
+    else
+        Main.Size = savedSize
+        MinBtn.Text = "-"
+        for _,v in pairs(Main:GetChildren()) do
+            if v:IsA("GuiObject") then
+                v.Visible = true
+            end
+        end
+    end
+end)
+
+-- BUTTON MAKER
+local function Button(text,y,callback)
+    local b = Instance.new("TextButton", Main)
+    b.Size = UDim2.new(0.9,0,0,34)
+    b.Position = UDim2.new(0.05,0,0,y)
+    b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    b.Text = text
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 14
+    b.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+    b.MouseButton1Click:Connect(function()
+        callback(b)
+    end)
+end
+
+-- BOTÕES
+Button("AIMBOT: OFF",60,function(b)
+    Settings.Aimbot = not Settings.Aimbot
+    b.Text = "AIMBOT: "..(Settings.Aimbot and "ON" or "OFF")
+end)
+
+Button("AIM PART: HEAD",105,function(b)
+    Settings.AimPart = (Settings.AimPart=="Head") and "HumanoidRootPart" or "Head"
+    b.Text = "AIM PART: "..(Settings.AimPart=="Head" and "HEAD" or "BODY")
+end)
+
+Button("ESP ALL: OFF",150,function(b)
+    Settings.ESP = not Settings.ESP
+    b.Text = "ESP ALL: "..(Settings.ESP and "ON" or "OFF")
+end)
+
+Button("SPEED SAFE: OFF",195,function(b)
+    Settings.Speed = not Settings.Speed
+    b.Text = "SPEED SAFE: "..(Settings.Speed and "ON" or "OFF")
+end)
+
+-- FOV SLIDER
+local FOVLabel = Instance.new("TextLabel", Main)
+FOVLabel.Position = UDim2.new(0.05,0,0,240)
+FOVLabel.Size = UDim2.new(0.9,0,0,20)
+FOVLabel.BackgroundTransparency = 1
+FOVLabel.Text = "FOV: "..Settings.FOV
+FOVLabel.Font = Enum.Font.Gotham
+FOVLabel.TextSize = 14
+FOVLabel.TextColor3 = Color3.new(1,1,1)
+
+local Slider = Instance.new("Frame", Main)
+Slider.Position = UDim2.new(0.05,0,0,270)
+Slider.Size = UDim2.new(0.9,0,0,6)
+Slider.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Instance.new("UICorner", Slider).CornerRadius = UDim.new(1,0)
+
+local Fill = Instance.new("Frame", Slider)
+Fill.BackgroundColor3 = Color3.fromRGB(255,60,60)
+Instance.new("UICorner", Fill).CornerRadius = UDim.new(1,0)
+
+Slider.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        local move
+        move = UIS.InputChanged:Connect(function(m)
+            if m.UserInputType == Enum.UserInputType.MouseMovement then
+                local pct = math.clamp(
+                    (m.Position.X - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X,0,1
+                )
+                Fill.Size = UDim2.fromScale(pct,1)
+                Settings.FOV = math.floor(60 + pct*240)
+                FOVLabel.Text = "FOV: "..Settings.FOV
+            end
+        end)
+        UIS.InputEnded:Once(function() move:Disconnect() end)
+    end
+end)
+
+-- FOV CIRCLE
+local Circle = Drawing.new("Circle")
+Circle.Thickness = 2
+Circle.NumSides = 100
+Circle.Color = Color3.fromRGB(255,60,60)
+Circle.Filled = false
+
+-- ESP
+local ESP = {}
+local function CreateESP(p)
+    if ESP[p] then return end
+    local box = Drawing.new("Square")
+    box.Thickness = 2
+    box.Filled = false
+    box.Color = Color3.fromRGB(0,255,0)
+
+    local name = Drawing.new("Text")
+    name.Size = 14
+    name.Center = true
+    name.Outline = true
+    name.Color = Color3.new(1,1,1)
+
+    ESP[p] = {Box=box,Name=name}
+end
+
+local function RemoveESP(p)
+    if ESP[p] then
+        ESP[p].Box:Remove()
+        ESP[p].Name:Remove()
+        ESP[p] = nil
+    end
+end
+
+-- TARGET
+local function GetTarget()
+    local best,dist=nil,math.huge
+    local center=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=LP and p.Character and p.Character:FindFirstChild(Settings.AimPart) then
+            local hum=p.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health>0 then
+                local pos,vis=Camera:WorldToViewportPoint(p.Character[Settings.AimPart].Position)
+                if vis then
+                    local d=(Vector2.new(pos.X,pos.Y)-center).Magnitude
+                    if d<dist and d<=Settings.FOV then
+                        dist=d
+                        best=p
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- LOOP
+RunService.RenderStepped:Connect(function()
+    Circle.Position = Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    Circle.Radius = Settings.FOV
+    Circle.Visible = Settings.Aimbot
+
+    local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = Settings.Speed and Settings.WalkSpeed or 16
+    end
+
+    if Settings.Aimbot and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+        local t=GetTarget()
+        if t then
+            Camera.CFrame = Camera.CFrame:Lerp(
+                CFrame.new(Camera.CFrame.Position,t.Character[Settings.AimPart].Position),
+                Settings.Smooth
+            )
+        end
+    end
+
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=LP and Settings.ESP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            CreateESP(p)
+            local root=p.Character.HumanoidRootPart
+            local pos,vis=Camera:WorldToViewportPoint(root.Position)
+            if vis then
+                ESP[p].Box.Size=Vector2.new(40,60)
+                ESP[p].Box.Position=Vector2.new(pos.X-20,pos.Y-30)
+                ESP[p].Box.Visible=true
+                ESP[p].Name.Text=p.Name
+                ESP[p].Name.Position=Vector2.new(pos.X,pos.Y-40)
+                ESP[p].Name.Visible=true
+            else
+                ESP[p].Box.Visible=false
+                ESP[p].Name.Visible=false
+            end
+        else
+            RemoveESP(p)
+        end
+    end
+end)
+
+print("LOS GOIANOS HUB - PAINEL COMPLETO ATIVO")
