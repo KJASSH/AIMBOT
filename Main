@@ -1,0 +1,32 @@
+-- Carregar RedzLib
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RedzLibV5/main/Source.Lua"))()
+
+-- Tema amarelo personalizado
+redzlib:SetTheme({
+    Accent = Color3.fromRGB(255, 200, 0),      -- amarelo principal
+    DarkContrast = Color3.fromRGB(25, 25, 25), -- fundo escuro
+    LightContrast = Color3.fromRGB(35, 35, 35),
+    TextColor = Color3.fromRGB(255, 255, 255)
+})
+
+-- Janela
+local Window = redzlib:MakeWindow({
+    Title = "GOIANO HUB | BROOKHAVEN 🏡",
+    SubTitle = "by Kjasshdev",
+    SaveFolder = "GoianoHub",
+    KeySystem = false
+})
+
+-- Botão minimizar amarelo
+Window:AddMinimizeButton({
+    Button = {
+        Size = UDim2.fromOffset(50, 50),
+        Position = UDim2.fromScale(0.08, 0.6),
+        Image = "rbxassetid://73558890398704",
+        BackgroundColor3 = Color3.fromRGB(255, 200, 0),
+        BackgroundTransparency = 0
+    },
+    Corner = {
+        CornerRadius = UDim.new(1, 0)
+    }
+})
